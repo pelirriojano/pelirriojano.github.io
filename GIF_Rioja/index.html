@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+    <!-- Cuerpo de la página web, donde se va a mostrar el contenido al usuario  -->
+	<head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css"><link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Grandes incendios forestales en La Rioja</title>
+    </head>
+    <body>
+	    <!-- Incorporación del mapa a la página web  -->
+        <div id="map">
+        </div>
+		<!-- Incorporación los javascript necesarios  -->
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script><script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="data/PermetroRioja_5.js"></script>
+        <script src="data/Tudelilla_1984_6.js"></script>
+        <script src="data/San_Vicente_Sonsierra_1984_7.js"></script>
+        <script src="data/Ocn_2010_8.js"></script>
+        <script src="data/Herce_1984_9.js"></script>
+        <script src="data/Galbrruli_1991_10.js"></script>
+        <script src="data/Ezcaray_2009_11.js"></script>
+        <script src="data/Ezcaray_31081985_07091985_12.js"></script>
+        <script src="data/Ezcaray_17_1985_13.js"></script>
+        <script src="data/Brieva_de_Cameros_1985_14.js"></script>
+        <script src="data/Bergasillas_Bajera_1989_15.js"></script>
+        <script src="data/Bergasillas_Bajera_1984_16.js"></script>
+        <script src="data/Bergasa_1989_17.js"></script>
+        <script src="data/Arnedillo_2001_18.js"></script>
+        <script src="data/Arnedillo_1989_19.js"></script>
+        <script src="data/Arnedillo_1985_20.js"></script>
+        <script>
+        <!-- Control del zoom del visor  -->
+		var map = L.map('map', {
+            zoomControl:true, maxZoom:28, minZoom:1
+        })
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="http://leafletjs.com" title="A JS library for interactive maps">Leaflet</a>');
+        <!-- Incorporación del localizador  -->
+		L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+		<!-- Incorporación de barra de escala  -->
+		L.control.scale().addTo(map);
+		<!-- Herramienta de medición de distancias y áreas  -->
+		var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+            if (bounds_group.getLayers().length) {
+                map.fitBounds(bounds_group.getBounds());
+            }
+        }
+        <!-- Incorporación de la cartografía base XYZ Tiles  -->
+		var layer_Ortofoto_Rioja_0 = L.tileLayer('https://ts0.larioja.org/mb_raster.php?z={z}&x={x}&y={y}', {
+            opacity: 1.0,
+            attribution: '',
+        });
+        layer_Ortofoto_Rioja_0;
+        var layer_Relieve_Rioja_1 = L.tileLayer('https://ts0.larioja.org/mb_relieve.php?z={z}&x={x}&y={y}', {
+            opacity: 1.0,
+            attribution: '',
+        });
+        layer_Relieve_Rioja_1;
+        var layer_National_Geographic_2 = L.tileLayer('http://services.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}', {
+            opacity: 1.0,
+            attribution: '',
+        });
+        layer_National_Geographic_2;
+        map.addLayer(layer_National_Geographic_2);
+        var layer_OpenStreetMap_3 = L.tileLayer('http://a.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            opacity: 1.0,
+            attribution: '',
+        });
+        layer_OpenStreetMap_3;
+        map.addLayer(layer_OpenStreetMap_3);
+        var layer_Carto_oscuro_4 = L.tileLayer('http://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+            opacity: 1.0,
+            attribution: '',
+        });
+        layer_Carto_oscuro_4;
+        map.addLayer(layer_Carto_oscuro_4);
+        function pop_PermetroRioja_5(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ID'] !== null ? Autolinker.link(String(feature.properties['ID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['NOMBRE'] !== null ? Autolinker.link(String(feature.properties['NOMBRE'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['INEPROV'] !== null ? Autolinker.link(String(feature.properties['INEPROV'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_PermetroRioja_5_0() {
+            return {
+                pane: 'pane_PermetroRioja_5',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_PermetroRioja_5');
+        map.getPane('pane_PermetroRioja_5').style.zIndex = 405;
+        map.getPane('pane_PermetroRioja_5').style['mix-blend-mode'] = 'normal';
+        var layer_PermetroRioja_5 = new L.geoJson(json_PermetroRioja_5, {
+            attribution: '',
+            pane: 'pane_PermetroRioja_5',
+            onEachFeature: pop_PermetroRioja_5,
+            style: style_PermetroRioja_5_0,
+        });
+        bounds_group.addLayer(layer_PermetroRioja_5);
+        map.addLayer(layer_PermetroRioja_5);
+        function pop_Tudelilla_1984_6(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Tudelilla_1984_6_0() {
+            return {
+                pane: 'pane_Tudelilla_1984_6',
+                opacity: 1,
+                color: 'rgba(253,6,6,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Tudelilla_1984_6');
+        map.getPane('pane_Tudelilla_1984_6').style.zIndex = 406;
+        map.getPane('pane_Tudelilla_1984_6').style['mix-blend-mode'] = 'normal';
+        var layer_Tudelilla_1984_6 = new L.geoJson(json_Tudelilla_1984_6, {
+            attribution: '',
+            pane: 'pane_Tudelilla_1984_6',
+            onEachFeature: pop_Tudelilla_1984_6,
+            style: style_Tudelilla_1984_6_0,
+        });
+        bounds_group.addLayer(layer_Tudelilla_1984_6);
+        map.addLayer(layer_Tudelilla_1984_6);
+        function pop_San_Vicente_Sonsierra_1984_7(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_San_Vicente_Sonsierra_1984_7_0() {
+            return {
+                pane: 'pane_San_Vicente_Sonsierra_1984_7',
+                opacity: 1,
+                color: 'rgba(250,5,5,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_San_Vicente_Sonsierra_1984_7');
+        map.getPane('pane_San_Vicente_Sonsierra_1984_7').style.zIndex = 407;
+        map.getPane('pane_San_Vicente_Sonsierra_1984_7').style['mix-blend-mode'] = 'normal';
+        var layer_San_Vicente_Sonsierra_1984_7 = new L.geoJson(json_San_Vicente_Sonsierra_1984_7, {
+            attribution: '',
+            pane: 'pane_San_Vicente_Sonsierra_1984_7',
+            onEachFeature: pop_San_Vicente_Sonsierra_1984_7,
+            style: style_San_Vicente_Sonsierra_1984_7_0,
+        });
+        bounds_group.addLayer(layer_San_Vicente_Sonsierra_1984_7);
+        map.addLayer(layer_San_Vicente_Sonsierra_1984_7);
+        function pop_Ocn_2010_8(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Ocn_2010_8_0() {
+            return {
+                pane: 'pane_Ocn_2010_8',
+                opacity: 1,
+                color: 'rgba(248,3,3,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Ocn_2010_8');
+        map.getPane('pane_Ocn_2010_8').style.zIndex = 408;
+        map.getPane('pane_Ocn_2010_8').style['mix-blend-mode'] = 'normal';
+        var layer_Ocn_2010_8 = new L.geoJson(json_Ocn_2010_8, {
+            attribution: '',
+            pane: 'pane_Ocn_2010_8',
+            onEachFeature: pop_Ocn_2010_8,
+            style: style_Ocn_2010_8_0,
+        });
+        bounds_group.addLayer(layer_Ocn_2010_8);
+        map.addLayer(layer_Ocn_2010_8);
+        function pop_Herce_1984_9(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Herce_1984_9_0() {
+            return {
+                pane: 'pane_Herce_1984_9',
+                opacity: 1,
+                color: 'rgba(252,5,5,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Herce_1984_9');
+        map.getPane('pane_Herce_1984_9').style.zIndex = 409;
+        map.getPane('pane_Herce_1984_9').style['mix-blend-mode'] = 'normal';
+        var layer_Herce_1984_9 = new L.geoJson(json_Herce_1984_9, {
+            attribution: '',
+            pane: 'pane_Herce_1984_9',
+            onEachFeature: pop_Herce_1984_9,
+            style: style_Herce_1984_9_0,
+        });
+        bounds_group.addLayer(layer_Herce_1984_9);
+        map.addLayer(layer_Herce_1984_9);
+        function pop_Galbrruli_1991_10(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>name</strong><br />' + (feature.properties['name'] !== null ? Autolinker.link(String(feature.properties['name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Galbrruli_1991_10_0() {
+            return {
+                pane: 'pane_Galbrruli_1991_10',
+                opacity: 1,
+                color: 'rgba(248,4,4,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Galbrruli_1991_10');
+        map.getPane('pane_Galbrruli_1991_10').style.zIndex = 410;
+        map.getPane('pane_Galbrruli_1991_10').style['mix-blend-mode'] = 'normal';
+        var layer_Galbrruli_1991_10 = new L.geoJson(json_Galbrruli_1991_10, {
+            attribution: '',
+            pane: 'pane_Galbrruli_1991_10',
+            onEachFeature: pop_Galbrruli_1991_10,
+            style: style_Galbrruli_1991_10_0,
+        });
+        bounds_group.addLayer(layer_Galbrruli_1991_10);
+        map.addLayer(layer_Galbrruli_1991_10);
+        function pop_Ezcaray_2009_11(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Ezcaray_2009_11_0() {
+            return {
+                pane: 'pane_Ezcaray_2009_11',
+                opacity: 1,
+                color: 'rgba(244,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Ezcaray_2009_11');
+        map.getPane('pane_Ezcaray_2009_11').style.zIndex = 411;
+        map.getPane('pane_Ezcaray_2009_11').style['mix-blend-mode'] = 'normal';
+        var layer_Ezcaray_2009_11 = new L.geoJson(json_Ezcaray_2009_11, {
+            attribution: '',
+            pane: 'pane_Ezcaray_2009_11',
+            onEachFeature: pop_Ezcaray_2009_11,
+            style: style_Ezcaray_2009_11_0,
+        });
+        bounds_group.addLayer(layer_Ezcaray_2009_11);
+        map.addLayer(layer_Ezcaray_2009_11);
+        function pop_Ezcaray_31081985_07091985_12(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Ezcaray_31081985_07091985_12_0() {
+            return {
+                pane: 'pane_Ezcaray_31081985_07091985_12',
+                opacity: 1,
+                color: 'rgba(250,2,2,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Ezcaray_31081985_07091985_12');
+        map.getPane('pane_Ezcaray_31081985_07091985_12').style.zIndex = 412;
+        map.getPane('pane_Ezcaray_31081985_07091985_12').style['mix-blend-mode'] = 'normal';
+        var layer_Ezcaray_31081985_07091985_12 = new L.geoJson(json_Ezcaray_31081985_07091985_12, {
+            attribution: '',
+            pane: 'pane_Ezcaray_31081985_07091985_12',
+            onEachFeature: pop_Ezcaray_31081985_07091985_12,
+            style: style_Ezcaray_31081985_07091985_12_0,
+        });
+        bounds_group.addLayer(layer_Ezcaray_31081985_07091985_12);
+        map.addLayer(layer_Ezcaray_31081985_07091985_12);
+        function pop_Ezcaray_17_1985_13(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Ezcaray_17_1985_13_0() {
+            return {
+                pane: 'pane_Ezcaray_17_1985_13',
+                opacity: 1,
+                color: 'rgba(248,5,5,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Ezcaray_17_1985_13');
+        map.getPane('pane_Ezcaray_17_1985_13').style.zIndex = 413;
+        map.getPane('pane_Ezcaray_17_1985_13').style['mix-blend-mode'] = 'normal';
+        var layer_Ezcaray_17_1985_13 = new L.geoJson(json_Ezcaray_17_1985_13, {
+            attribution: '',
+            pane: 'pane_Ezcaray_17_1985_13',
+            onEachFeature: pop_Ezcaray_17_1985_13,
+            style: style_Ezcaray_17_1985_13_0,
+        });
+        bounds_group.addLayer(layer_Ezcaray_17_1985_13);
+        map.addLayer(layer_Ezcaray_17_1985_13);
+        function pop_Brieva_de_Cameros_1985_14(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Brieva_de_Cameros_1985_14_0() {
+            return {
+                pane: 'pane_Brieva_de_Cameros_1985_14',
+                opacity: 1,
+                color: 'rgba(250,5,5,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Brieva_de_Cameros_1985_14');
+        map.getPane('pane_Brieva_de_Cameros_1985_14').style.zIndex = 414;
+        map.getPane('pane_Brieva_de_Cameros_1985_14').style['mix-blend-mode'] = 'normal';
+        var layer_Brieva_de_Cameros_1985_14 = new L.geoJson(json_Brieva_de_Cameros_1985_14, {
+            attribution: '',
+            pane: 'pane_Brieva_de_Cameros_1985_14',
+            onEachFeature: pop_Brieva_de_Cameros_1985_14,
+            style: style_Brieva_de_Cameros_1985_14_0,
+        });
+        bounds_group.addLayer(layer_Brieva_de_Cameros_1985_14);
+        map.addLayer(layer_Brieva_de_Cameros_1985_14);
+        function pop_Bergasillas_Bajera_1989_15(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Bergasillas_Bajera_1989_15_0() {
+            return {
+                pane: 'pane_Bergasillas_Bajera_1989_15',
+                opacity: 1,
+                color: 'rgba(248,3,3,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Bergasillas_Bajera_1989_15');
+        map.getPane('pane_Bergasillas_Bajera_1989_15').style.zIndex = 415;
+        map.getPane('pane_Bergasillas_Bajera_1989_15').style['mix-blend-mode'] = 'normal';
+        var layer_Bergasillas_Bajera_1989_15 = new L.geoJson(json_Bergasillas_Bajera_1989_15, {
+            attribution: '',
+            pane: 'pane_Bergasillas_Bajera_1989_15',
+            onEachFeature: pop_Bergasillas_Bajera_1989_15,
+            style: style_Bergasillas_Bajera_1989_15_0,
+        });
+        bounds_group.addLayer(layer_Bergasillas_Bajera_1989_15);
+        map.addLayer(layer_Bergasillas_Bajera_1989_15);
+        function pop_Bergasillas_Bajera_1984_16(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Bergasillas_Bajera_1984_16_0() {
+            return {
+                pane: 'pane_Bergasillas_Bajera_1984_16',
+                opacity: 1,
+                color: 'rgba(253,6,6,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Bergasillas_Bajera_1984_16');
+        map.getPane('pane_Bergasillas_Bajera_1984_16').style.zIndex = 416;
+        map.getPane('pane_Bergasillas_Bajera_1984_16').style['mix-blend-mode'] = 'normal';
+        var layer_Bergasillas_Bajera_1984_16 = new L.geoJson(json_Bergasillas_Bajera_1984_16, {
+            attribution: '',
+            pane: 'pane_Bergasillas_Bajera_1984_16',
+            onEachFeature: pop_Bergasillas_Bajera_1984_16,
+            style: style_Bergasillas_Bajera_1984_16_0,
+        });
+        bounds_group.addLayer(layer_Bergasillas_Bajera_1984_16);
+        map.addLayer(layer_Bergasillas_Bajera_1984_16);
+        function pop_Bergasa_1989_17(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Bergasa_1989_17_0() {
+            return {
+                pane: 'pane_Bergasa_1989_17',
+                opacity: 1,
+                color: 'rgba(247,2,2,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Bergasa_1989_17');
+        map.getPane('pane_Bergasa_1989_17').style.zIndex = 417;
+        map.getPane('pane_Bergasa_1989_17').style['mix-blend-mode'] = 'normal';
+        var layer_Bergasa_1989_17 = new L.geoJson(json_Bergasa_1989_17, {
+            attribution: '',
+            pane: 'pane_Bergasa_1989_17',
+            onEachFeature: pop_Bergasa_1989_17,
+            style: style_Bergasa_1989_17_0,
+        });
+        bounds_group.addLayer(layer_Bergasa_1989_17);
+        map.addLayer(layer_Bergasa_1989_17);
+        function pop_Arnedillo_2001_18(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Arnedillo_2001_18_0() {
+            return {
+                pane: 'pane_Arnedillo_2001_18',
+                opacity: 1,
+                color: 'rgba(255,1,1,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Arnedillo_2001_18');
+        map.getPane('pane_Arnedillo_2001_18').style.zIndex = 418;
+        map.getPane('pane_Arnedillo_2001_18').style['mix-blend-mode'] = 'normal';
+        var layer_Arnedillo_2001_18 = new L.geoJson(json_Arnedillo_2001_18, {
+            attribution: '',
+            pane: 'pane_Arnedillo_2001_18',
+            onEachFeature: pop_Arnedillo_2001_18,
+            style: style_Arnedillo_2001_18_0,
+        });
+        bounds_group.addLayer(layer_Arnedillo_2001_18);
+        map.addLayer(layer_Arnedillo_2001_18);
+        function pop_Arnedillo_1989_19(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Arnedillo_1989_19_0() {
+            return {
+                pane: 'pane_Arnedillo_1989_19',
+                opacity: 1,
+                color: 'rgba(252,3,3,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Arnedillo_1989_19');
+        map.getPane('pane_Arnedillo_1989_19').style.zIndex = 419;
+        map.getPane('pane_Arnedillo_1989_19').style['mix-blend-mode'] = 'normal';
+        var layer_Arnedillo_1989_19 = new L.geoJson(json_Arnedillo_1989_19, {
+            attribution: '',
+            pane: 'pane_Arnedillo_1989_19',
+            onEachFeature: pop_Arnedillo_1989_19,
+            style: style_Arnedillo_1989_19_0,
+        });
+        bounds_group.addLayer(layer_Arnedillo_1989_19);
+        map.addLayer(layer_Arnedillo_1989_19);
+        function pop_Arnedillo_1985_20(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Leng'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Leng'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? Autolinker.link(String(feature.properties['SHAPE_Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Name</strong><br />' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Hectareas</strong><br />' + (feature.properties['Hectareas'] !== null ? Autolinker.link(String(feature.properties['Hectareas'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Arnedillo_1985_20_0() {
+            return {
+                pane: 'pane_Arnedillo_1985_20',
+                opacity: 1,
+                color: 'rgba(255,1,1,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Arnedillo_1985_20');
+        map.getPane('pane_Arnedillo_1985_20').style.zIndex = 420;
+        map.getPane('pane_Arnedillo_1985_20').style['mix-blend-mode'] = 'normal';
+        var layer_Arnedillo_1985_20 = new L.geoJson(json_Arnedillo_1985_20, {
+            attribution: '',
+            pane: 'pane_Arnedillo_1985_20',
+            onEachFeature: pop_Arnedillo_1985_20,
+            style: style_Arnedillo_1985_20_0,
+        });
+        bounds_group.addLayer(layer_Arnedillo_1985_20);
+        map.addLayer(layer_Arnedillo_1985_20);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var baseMaps = {};
+        L.control.layers(baseMaps,{'<img src="legend/Arnedillo_1985_20.png" /> Arnedillo_1985': layer_Arnedillo_1985_20,'<img src="legend/Arnedillo_1989_19.png" /> Arnedillo_1989': layer_Arnedillo_1989_19,'<img src="legend/Arnedillo_2001_18.png" /> Arnedillo_2001': layer_Arnedillo_2001_18,'<img src="legend/Bergasa_1989_17.png" /> Bergasa_1989': layer_Bergasa_1989_17,'<img src="legend/Bergasillas_Bajera_1984_16.png" /> Bergasillas_Bajera_1984': layer_Bergasillas_Bajera_1984_16,'<img src="legend/Bergasillas_Bajera_1989_15.png" /> Bergasillas_Bajera_1989': layer_Bergasillas_Bajera_1989_15,'<img src="legend/Brieva_de_Cameros_1985_14.png" /> Brieva_de_Cameros_1985': layer_Brieva_de_Cameros_1985_14,'<img src="legend/Ezcaray_17_1985_13.png" /> Ezcaray_17_1985': layer_Ezcaray_17_1985_13,'<img src="legend/Ezcaray_31081985_07091985_12.png" /> Ezcaray_31-08-1985_07-09-1985': layer_Ezcaray_31081985_07091985_12,'<img src="legend/Ezcaray_2009_11.png" /> Ezcaray_2009': layer_Ezcaray_2009_11,'<img src="legend/Galbrruli_1991_10.png" /> Galbárruli_1991': layer_Galbrruli_1991_10,'<img src="legend/Herce_1984_9.png" /> Herce_1984': layer_Herce_1984_9,'<img src="legend/Ocn_2010_8.png" /> Ocón_2010': layer_Ocn_2010_8,'<img src="legend/San_Vicente_Sonsierra_1984_7.png" /> San_Vicente_Sonsierra_1984': layer_San_Vicente_Sonsierra_1984_7,'<img src="legend/Tudelilla_1984_6.png" /> Tudelilla_1984': layer_Tudelilla_1984_6,'<img src="legend/PermetroRioja_5.png" /> Perímetro Rioja': layer_PermetroRioja_5,"Carto_oscuro": layer_Carto_oscuro_4,"OpenStreetMap": layer_OpenStreetMap_3,"National_Geographic": layer_National_Geographic_2,"Relieve_Rioja": layer_Relieve_Rioja_1,"Ortofoto_Rioja": layer_Ortofoto_Rioja_0,}).addTo(map);
+        setBounds();
+        </script>
+    </body>
+</html>
